@@ -3,8 +3,10 @@ package br.com.alura.screenmatch_spring_datajpa.main;
 import br.com.alura.screenmatch_spring_datajpa.model.SeasonInfo;
 import br.com.alura.screenmatch_spring_datajpa.model.Serie;
 import br.com.alura.screenmatch_spring_datajpa.model.SeriesInfo;
+import br.com.alura.screenmatch_spring_datajpa.repository.SerieRepository;
 import br.com.alura.screenmatch_spring_datajpa.service.ApiConsumption;
 import br.com.alura.screenmatch_spring_datajpa.service.DataConversion;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,6 +23,13 @@ public class Main {
     private final DataConversion dataConversion = new DataConversion();
     private final Scanner scanner = new Scanner(System.in);
     private List<SeriesInfo> seriesInfoList = new ArrayList<>();
+
+    private SerieRepository repository;
+
+    public Main(SerieRepository repository) {
+        this.repository = repository;
+    }
+
 
     public void displayMenu() {
         var option = -1;
@@ -70,7 +79,9 @@ public class Main {
 
     private void searchSeries() {
         SeriesInfo info = getSeriesInfo();
-        seriesInfoList.add(info);
+        Serie serie = new Serie(info);
+        //seriesInfoList.add(info);
+        repository.save(serie);
         System.out.println(info);
     }
 
@@ -87,10 +98,11 @@ public class Main {
     }
 
     private void listSearchedSeries() {
-        List<Serie> series = new ArrayList<>();
-        series = seriesInfoList.stream()
-                .map(s -> new Serie(s))
-                .collect(Collectors.toList());
+        List<Serie> series = repository.findAll();
+
+//        series = seriesInfoList.stream()
+//                .map(s -> new Serie(s))
+//                .collect(Collectors.toList());
 
         series.stream()
                 .sorted(Comparator.comparing(Serie::getGenre))
