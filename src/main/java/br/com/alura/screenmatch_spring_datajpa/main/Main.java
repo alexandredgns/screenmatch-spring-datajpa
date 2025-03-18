@@ -39,6 +39,7 @@ public class Main {
                     1 - Search for series
                     2 - Search for episodes
                     3 - List searched series
+                    4 - Searched series by title
                     
                     0 - Exit
                     """;
@@ -57,6 +58,9 @@ public class Main {
                 case 3:
                     listSearchedSeries();
                     break;
+                case 4:
+                    searchedSeriesByTitle();
+                    break;
                 case 0:
                     System.out.println("Application Finished");
                     break;
@@ -65,6 +69,7 @@ public class Main {
             }
         }
     }
+
 
 
     private SeriesInfo getSeriesInfo() {
@@ -92,9 +97,13 @@ public class Main {
         System.out.println("Choose a serie:");
         var serieTitle = scanner.nextLine();
 
-        Optional<Serie> serie = series.stream()
-                .filter(s -> s.getTitle().toLowerCase().contains(serieTitle.toLowerCase()))
-                .findFirst();
+//        Optional<Serie> serie = series.stream()
+//                .filter(s -> s.getTitle().toLowerCase().contains(serieTitle.toLowerCase()))
+//                .findFirst();
+//        ------------------------------
+//  -----> Now using the JPA Repository:
+//        ------------------------------
+        Optional<Serie> serie = repository.findByTitleContainingIgnoreCase(serieTitle);
 
         if(serie.isPresent()) {
             var serieFiltered = serie.get();
@@ -122,9 +131,9 @@ public class Main {
 
     private void listSearchedSeries() {
         series = repository.findAll();
-
+//  ----> Using Database instead of lists and streams
 //        series = seriesInfoList.stream()
-//                .map(s -> new Serie(s))
+//                .map(si -> new Serie(si))
 //                .collect(Collectors.toList());
 
         series.stream()
@@ -132,6 +141,17 @@ public class Main {
                 .forEach(System.out::println);
     }
 
+    private void searchedSeriesByTitle() {
+        System.out.println("Choose a serie:");
+        var serieTitle = scanner.nextLine();
+        Optional<Serie> searchedSerie = repository.findByTitleContainingIgnoreCase(serieTitle);
+
+        if(searchedSerie.isPresent()) {
+            System.out.println("---- Serie Info -----\n" + searchedSerie.get());
+        } else {
+            System.out.println("Serie not found");
+        }
+    }
 
 }
 
