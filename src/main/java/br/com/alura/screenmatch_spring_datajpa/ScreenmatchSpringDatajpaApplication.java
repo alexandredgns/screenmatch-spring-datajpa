@@ -24,4 +24,4 @@ public class ScreenmatchSpringDatajpaApplication implements CommandLineRunner {
 	}
 }
 
-// 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
+

@@ -26,7 +26,8 @@ public class Serie {
     private String actors;
     private String poster;
     private String plot;
-    @Transient
+
+    @OneToMany(mappedBy = "serie", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Episode> episodes = new ArrayList<>();
 
     public Serie(SeriesInfo seriesInfo) {
@@ -36,8 +37,7 @@ public class Serie {
         this.genre = Category.fromString(seriesInfo.genre().split(",")[0]);
         this.actors = seriesInfo.actors();
         this.poster = seriesInfo.poster();
-        //this.plot = CallChatGPT.translateToPortuguese(seriesInfo.plot()).trim();
-        this.plot = seriesInfo.plot();
+        this.plot = CallChatGPT.translateToPortuguese(seriesInfo.plot()).trim();
     }
 
     public Serie() {}
@@ -111,19 +111,21 @@ public class Serie {
     }
 
     public void setEpisodes(List<Episode> episodes) {
+        episodes.forEach(e -> e.setSerie(this));
         this.episodes = episodes;
     }
 
     @Override
     public String toString() {
         return
-                "genre=" + genre + "\n" +
-                ", title='" + title + "\n" +
-                ", totalSeasons=" + totalSeasons + "\n" +
-                ", imdbRating=" + imdbRating + "\n" +
-                ", actors='" + actors + "\n" +
-                ", poster='" + poster + "\n" +
-                ", plot='" + plot;
+                "genre=" + genre +
+                ", title='" + title + "\'" +
+                ", totalSeasons=" + totalSeasons +
+                ", imdbRating=" + imdbRating +
+                ", actors='" + actors + "\'" +
+                ", poster='" + poster + "\'" +
+                ", plot='" + plot + "\'" + "\n" +
+                ", episodes=" + episodes;
 
     }
 }
