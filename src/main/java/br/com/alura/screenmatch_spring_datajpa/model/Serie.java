@@ -30,14 +30,14 @@ public class Serie {
     @OneToMany(mappedBy = "serie", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Episode> episodes = new ArrayList<>();
 
-    public Serie(SeriesInfo seriesInfo) {
-        this.title = seriesInfo.title();
-        this.totalSeasons = seriesInfo.totalSeasons();
-        this.imdbRating = OptionalDouble.of(Double.valueOf(seriesInfo.imdbRating())).orElse(0);
-        this.genre = Category.fromString(seriesInfo.genre().split(",")[0]);
-        this.actors = seriesInfo.actors();
-        this.poster = seriesInfo.poster();
-        this.plot = CallChatGPT.translateToPortuguese(seriesInfo.plot()).trim();
+    public Serie(SerieInfo serieInfo) {
+        this.title = serieInfo.title();
+        this.totalSeasons = serieInfo.totalSeasons();
+        this.imdbRating = OptionalDouble.of(Double.valueOf(serieInfo.imdbRating())).orElse(0);
+        this.genre = Category.fromString(serieInfo.genre().split(",")[0]);
+        this.actors = serieInfo.actors();
+        this.poster = serieInfo.poster();
+        this.plot = CallChatGPT.translateToPortuguese(serieInfo.plot()).trim();
     }
 
     public Serie() {}

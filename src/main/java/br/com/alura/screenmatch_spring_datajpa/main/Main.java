@@ -1,13 +1,9 @@
 package br.com.alura.screenmatch_spring_datajpa.main;
 
-import br.com.alura.screenmatch_spring_datajpa.model.Episode;
-import br.com.alura.screenmatch_spring_datajpa.model.SeasonInfo;
-import br.com.alura.screenmatch_spring_datajpa.model.Serie;
-import br.com.alura.screenmatch_spring_datajpa.model.SeriesInfo;
+import br.com.alura.screenmatch_spring_datajpa.model.*;
 import br.com.alura.screenmatch_spring_datajpa.repository.SerieRepository;
 import br.com.alura.screenmatch_spring_datajpa.service.ApiConsumption;
 import br.com.alura.screenmatch_spring_datajpa.service.DataConversion;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,11 +16,12 @@ public class Main {
     private final ApiConsumption apiConsumption = new ApiConsumption();
     private final DataConversion dataConversion = new DataConversion();
     private final Scanner scanner = new Scanner(System.in);
-    private List<SeriesInfo> seriesInfoList = new ArrayList<>();
+    private List<SerieInfo> serieInfoList = new ArrayList<>();
 
     private SerieRepository repository;
 
     private List<Serie> series = new ArrayList<>();
+    private Optional<Serie> searchedSerie;
 
     public Main(SerieRepository repository) {
         this.repository = repository;
@@ -39,7 +36,14 @@ public class Main {
                     1 - Search for series
                     2 - Search for episodes
                     3 - List searched series
-                    4 - Searched series by title
+                    4 - Searched series by Title
+                    5 - Searched series by Actor
+                    6 - Searched Top 5 Series
+                    7 - Searched series by Genre
+                    8 - By Number of Seasons and Rating 
+                    9 - Search episodes by snippet
+                    10 - Top 5 Episodes by Serie
+                    11 - Search Episodes by Date
                     
                     0 - Exit
                     """;
@@ -61,6 +65,27 @@ public class Main {
                 case 4:
                     searchedSeriesByTitle();
                     break;
+                case 5:
+                    searchedSeriesByActor();
+                    break;
+                case 6:
+                    searchedTop5Series();
+                    break;
+                case 7:
+                    searchedSeriesByGenre();
+                    break;
+                case 8:
+                    searchedSeriesBySeasonsAndRating();
+                    break;
+                case 9:
+                    searchEpisodeBySnippet();
+                    break;
+                case 10:
+                    topEpisodesbySerie();
+                    break;
+                case 11:
+                    searchEpisodesByDate();
+                    break;
                 case 0:
                     System.out.println("Application Finished");
                     break;
@@ -71,23 +96,22 @@ public class Main {
     }
 
 
-
-    private SeriesInfo getSeriesInfo() {
+    private SerieInfo getSerieInfo() {
         System.out.println("Wich serie you want to find?");
         var search = scanner.nextLine();
         var query = QUERY + API_KEY + search.replace(" ", "+");
         var json = apiConsumption.getData(query);
 
-        var seriesInfo = dataConversion.getData(json, SeriesInfo.class);
+        var seriesInfo = dataConversion.getData(json, SerieInfo.class);
         return seriesInfo;
     }
 
     private void searchSeries() {
-        SeriesInfo info = getSeriesInfo();
-        Serie serie = new Serie(info);
+        SerieInfo serieInfo = getSerieInfo();
+        Serie serie = new Serie(serieInfo);
         //seriesInfoList.add(info);
         repository.save(serie);
-        System.out.println(info);
+        System.out.println(serieInfo);
     }
 
     private void searchEpisodeBySeries() {
@@ -144,12 +168,90 @@ public class Main {
     private void searchedSeriesByTitle() {
         System.out.println("Choose a serie:");
         var serieTitle = scanner.nextLine();
-        Optional<Serie> searchedSerie = repository.findByTitleContainingIgnoreCase(serieTitle);
+        searchedSerie = repository.findByTitleContainingIgnoreCase(serieTitle);
 
         if(searchedSerie.isPresent()) {
             System.out.println("---- Serie Info -----\n" + searchedSerie.get());
         } else {
             System.out.println("Serie not found");
+        }
+    }
+
+    private void searchedSeriesByActor() {
+        System.out.println("Choose an actor:");
+        var actor = scanner.nextLine();
+        List<Serie> searchedSeries = repository.findByActorsContainingIgnoreCaseAndImdbRatingGreaterThanEqual(actor, 8.3);
+        System.out.println("Results for " + actor + " :");
+        searchedSeries.forEach(s ->
+                System.out.println(s.getTitle() + " [rating: " + s.getImdbRating() + "]"));
+    }
+
+    private void searchedTop5Series() {
+        List<Serie> searchedSeries = repository.findTop5ByOrderByImdbRatingDesc();
+        searchedSeries.forEach(s ->
+                System.out.println(s.getTitle() + " [rating: " + s.getImdbRating() + "]"));
+    }
+
+    private void searchedSeriesByGenre() {
+        System.out.println("Search series by genre: ");
+        var genre = scanner.nextLine();
+        List<Serie> searchedSeries = repository.findByGenre(Category.fromString(genre));
+        searchedSeries.forEach(s ->
+                System.out.println(s.getTitle() + " [rating: " + s.getImdbRating() + "] "
+                + s.getGenre()));
+
+    }
+
+    private void searchedSeriesBySeasonsAndRating() {
+        System.out.println("Maximum Number of Seasons: ");
+        var numberSeasons = scanner.nextInt();
+        scanner.nextLine();
+        System.out.println("Rating: ");
+        var rating = scanner.nextDouble();
+        scanner.nextLine();
+
+        //List<Serie> searchedSeries = repository.findByTotalSeasonsLessThanEqualAndImdbRatingGreaterThanEqual(numberSeasons, rating);
+        // ----> NOW USING JPQL:
+        List<Serie> searchedSeries = repository.seriesByTotalSeasonsAndRating(numberSeasons, rating);
+        searchedSeries.forEach(s ->
+                System.out.println(s.getTitle() + " [Rating: " + s.getImdbRating() + "] "
+                        + ", [Seasons: " + s.getTotalSeasons() + "]"));
+    }
+
+    private void searchEpisodeBySnippet() {
+        System.out.println("What is the title of the episode: ");
+        var episodeSnippet = scanner.nextLine();
+
+        List<Episode> searchedEpisodes = repository.episodeBySnippet(episodeSnippet);
+        searchedEpisodes.forEach(e ->
+                System.out.printf("Serie: %s, Season %s, Episode %s - %s\n",
+                        e.getSerie().getTitle(), e.getSeason(),
+                        e.getNumber(), e.getTitle()));
+    }
+
+    private void topEpisodesbySerie() {
+        searchedSeriesByTitle();
+        if (searchedSerie.isPresent()) {
+            Serie serie = searchedSerie.get();
+            List<Episode> topEpisodes = repository.topEpisodesbySerie(serie);
+            topEpisodes.forEach(e ->
+                    System.out.printf("Serie: %s, Season %s, Episode %s - %s, Rating: %s\n",
+                            e.getSerie().getTitle(), e.getSeason(),
+                            e.getNumber(), e.getTitle(), e.getImdbRating()));
+
+        }
+    }
+
+    private void searchEpisodesByDate() {
+        searchedSeriesByTitle();
+        if (searchedSerie.isPresent()) {
+            System.out.println("Search for episodes from wich year?");
+            var year = scanner.nextInt();
+            scanner.nextLine();
+
+            Serie serie = searchedSerie.get();
+            List<Episode> searchedEpisodes = repository.episodesByYearAndSerie(serie, year);
+            searchedEpisodes.forEach(System.out::println);
         }
     }
 
